@@ -61,7 +61,10 @@ void Cpu::perform_bit(uint8_t value) {
 }
 
 void Cpu::perform_adc(uint8_t op) {
+    bool full_circle = op == 0xff && flag_c;
     reg_a = add(reg_a, op + flag_c);
+    // special case, probably nicer way to do this
+    flag_c = flag_c || full_circle;
 }
 
 uint8_t Cpu::add(uint8_t left, uint8_t right) {
@@ -79,7 +82,7 @@ void Cpu::perform_sbc(uint8_t op) {
 uint8_t Cpu::subtract(uint8_t left, uint8_t right) {
     uint8_t result = left - right;
     FLAGZN(result);
-    flag_c = (result > left);
+    flag_c = left >= right;
     flag_v = (int16_t(int8_t(left)) - int16_t(int8_t(right)) != int16_t(int8_t(result)));
     return result;
 }
