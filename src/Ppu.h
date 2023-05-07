@@ -7,14 +7,18 @@
 
 #include <array>
 #include <cstdint>
+#include <memory>
 
 class Ppu {
 public:
+    Ppu(std::shared_ptr<std::array<uint8_t, 0x2000>> chr) : chr(std::move(chr)) {}
     uint8_t read_reg(uint16_t addr);
     void write_reg(uint16_t addr, uint8_t value);
     bool vblank();
     void write_oam(uint8_t value);
+    void render(uint32_t *image);
 protected:
+    std::shared_ptr<std::array<uint8_t, 0x2000>> chr;
     std::array<std::array<uint8_t, 0x400>, 2> nametables;
     std::array<uint8_t, 0x20> palettes;
     std::array<uint8_t, 0x100> oam;
@@ -34,6 +38,7 @@ private:
     uint16_t access_addr;
     bool vblank_flag = false;
     uint8_t oam_addr = 0;
+
 };
 
 

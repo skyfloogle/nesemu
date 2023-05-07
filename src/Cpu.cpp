@@ -23,6 +23,12 @@ void Cpu::nmi() {
 
 void Cpu::vblank() {
     if (ppu.vblank() && flag_i) nmi();
+    FILE *f;
+    fopen_s(&f, "screen.data", "wb");
+    uint32_t buffer[256*240];
+    ppu.render(buffer);
+    fwrite(buffer, 4, 256*240, f);
+    fclose(f);
 }
 
 void Cpu::perform_rol(uint8_t& value) {
@@ -878,7 +884,7 @@ int Cpu::run_instruction() {
 
 uint8_t Cpu::mem_read(uint16_t addr) {
     if (addr >= 0x8000) {
-        return (*cart)[addr & 0x7fff];
+        return (*prg)[addr & 0x7fff];
     } else if (addr < 0x2000) {
         return ram[addr & 0x7ff];
     } else if (addr < 0x4000) {

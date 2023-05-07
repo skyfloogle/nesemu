@@ -20,7 +20,7 @@
 
 class Cpu {
 public:
-    Cpu(std::shared_ptr<std::array<uint8_t, 0x8000>> cart) : cart(std::move(cart)) {}
+    Cpu(std::shared_ptr<std::array<uint8_t, 0x8000>> prg, std::shared_ptr<std::array<uint8_t, 0x2000>> chr) : prg(std::move(prg)), ppu(std::move(chr)) {}
     int run_instruction();
     void reset();
     void nmi();
@@ -31,7 +31,7 @@ private:
     uint8_t reg_a, reg_x, reg_y, reg_sp;
     bool flag_v, flag_d, flag_i, flag_c, flag_z, flag_n;
     uint16_t reg_pc = 0x8000;
-    std::shared_ptr<std::array<uint8_t, 0x8000>> cart;
+    std::shared_ptr<std::array<uint8_t, 0x8000>> prg;
     Ppu ppu;
 
     bool reloading_controllers;
