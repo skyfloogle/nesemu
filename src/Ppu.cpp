@@ -6,26 +6,34 @@
 #include "palette.h"
 
 uint8_t Ppu::read_reg(uint16_t addr) {
-    uint8_t value;
+    uint8_t value = leftover;
     switch (addr & 7) {
         case 2:
             // PPUSTATUS
             value = vblank_flag << 7;
             vblank_flag = false;
-            return value;
+            addr_hi = true;
+            scroll_latch = true;
+            break;
         case 4:
             // OAMDATA
             abort();
         case 7:
             // PPUDATA
-            abort();
+            value = mem_read(access_addr);
+            if (access_increment) access_addr += 32;
+            else access_addr += 1;
+            break;
         default:
             // not allowed
-            abort();
+            break;
     }
+    leftover = value;
+    return value;
 }
 
 void Ppu::write_reg(uint16_t addr, uint8_t value) {
+    leftover = value;
     switch (addr & 7) {
         case 0:
             // PPUCTRL
@@ -75,14 +83,16 @@ void Ppu::write_reg(uint16_t addr, uint8_t value) {
 
 uint8_t Ppu::mem_read(uint16_t addr) {
     addr &= 0x3fff;
+    uint8_t value = read_buf;
     if (addr < 0x2000) {
-        // TODO pattern
-        abort();
+        read_buf = (*chr)[addr];
     } else if (addr < 0x3f00) {
-        return nametables[0][addr & 0x3ff];
+        read_buf = nametables[0][addr & 0x3ff];
     } else {
+        // palettes return early
         return palettes[addr & 0x1f];
     }
+    return value;
 }
 
 void Ppu::mem_write(uint16_t addr, uint8_t value) {

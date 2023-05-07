@@ -899,8 +899,8 @@ uint8_t Cpu::mem_read(uint16_t addr) {
         if (input_mask[1] == 0) input_mask[1] = 1;
         return inputs[1] & input_mask[1];
     } else {
-        // TODO
-        abort();
+        // uhh i guess this is what you do?????
+        return addr >> 8;
     }
 }
 

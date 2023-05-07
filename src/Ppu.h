@@ -39,7 +39,8 @@ private:
     uint16_t access_addr;
     bool vblank_flag = false;
     uint8_t oam_addr = 0;
-
+    uint8_t read_buf;
+    uint8_t leftover;
 };
 
 
