@@ -5,17 +5,11 @@
 #ifndef NESEMU_INPUT_H
 #define NESEMU_INPUT_H
 
-#include <cstdio>
 #include "SDL.h"
 
 uint8_t read_inputs() {
     int numkeys;
     auto keys = SDL_GetKeyboardState(&numkeys);
-    for (int i = 0; i < numkeys; i++) {
-        if (keys[i]) {
-            printf("pressed %d\n", i);
-        }
-    }
     uint8_t result =
             (keys[SDL_SCANCODE_Z] << 0)
             | (keys[SDL_SCANCODE_X] << 1)
