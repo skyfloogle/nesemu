@@ -36,7 +36,7 @@ private:
 
     bool reloading_controllers;
     uint8_t inputs[2];
-    uint8_t input_mask[2];
+    uint8_t input_mask[2] = {0};
 
     void perform_adc(uint8_t op);
 

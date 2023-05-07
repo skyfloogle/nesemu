@@ -15,7 +15,9 @@ public:
     void render() override;
 private:
     SDL_Window* window;
-    SDL_Surface* surface;
+    SDL_Surface* window_surface;
+    SDL_Surface* game_surface;
+    Uint64 last_timestamp;
 
 };
 

@@ -3,6 +3,7 @@
 //
 
 #include "Cpu.h"
+#include "input.h"
 
 #include <string>
 
@@ -891,7 +892,7 @@ uint8_t Cpu::mem_read(uint16_t addr) {
         // JOY1
         input_mask[0] <<= 1;
         if (input_mask[0] == 0) input_mask[0] = 1;
-        return inputs[0] & input_mask[0];
+        return (inputs[0] & input_mask[0]) != 0;
     } else if (addr == 0x4017) {
         // JOY2
         input_mask[1] <<= 1;
@@ -919,6 +920,9 @@ void Cpu::mem_write(uint16_t addr, uint8_t value) {
     } else if (addr == 0x4016) {
         // JOY1
         reloading_controllers = (value & 1) != 0;
+        if (reloading_controllers) {
+            inputs[0] = read_inputs();
+        }
     } else if (addr == 0x4017) {
         // "frame counter"
     } else {

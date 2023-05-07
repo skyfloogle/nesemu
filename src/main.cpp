@@ -8,7 +8,7 @@ int main(int argc, char* argv[]) {
     auto prg = std::make_shared<std::array<uint8_t, 0x8000>>();
     auto chr = std::make_shared<std::array<uint8_t, 0x2000>>();
     FILE *f;
-    fopen_s(&f, "../Donkey Kong (World) (Rev A).nes", "rb");
+    fopen_s(&f, "dk", "rb");
     fseek(f, 4, 0);
     unsigned char prg_size;
     fread(&prg_size, 1, 1, f);

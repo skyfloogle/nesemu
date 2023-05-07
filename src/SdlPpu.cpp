@@ -8,13 +8,15 @@
 
 SdlPpu::SdlPpu(std::shared_ptr<std::array<uint8_t, 0x2000>> chr) : Ppu(std::move(chr)) {
     SetProcessDPIAware();
-    SDL_Init(SDL_INIT_VIDEO);
+    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
     window = SDL_CreateWindow(
-            "NES",
+            "DK",
             SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-            256, 240, SDL_WINDOW_SHOWN
+            768, 720, SDL_WINDOW_SHOWN
             );
-    surface = SDL_GetWindowSurface(window);
+    window_surface = SDL_GetWindowSurface(window);
+    game_surface = SDL_CreateRGBSurfaceWithFormat(0, 256, 240, 32, window_surface->format->format);
+    last_timestamp = SDL_GetPerformanceCounter();
 }
 
 void SdlPpu::render() {
@@ -24,10 +26,14 @@ void SdlPpu::render() {
             exit(0);
         }
     }
-    SDL_FillRect(surface, nullptr, palette[palettes[0]]);
-    SDL_LockSurface(surface);
-    Ppu::render(static_cast<uint32_t *>(surface->pixels));
-    SDL_UnlockSurface(surface);
+    SDL_FillRect(game_surface, nullptr, palette[palettes[0]]);
+    SDL_LockSurface(game_surface);
+    Ppu::render(static_cast<uint32_t *>(game_surface->pixels));
+    SDL_UnlockSurface(game_surface);
+    SDL_BlitScaled(game_surface, nullptr, window_surface, nullptr);
     SDL_UpdateWindowSurface(window);
-    SDL_Delay(16);
+    // timing
+    Uint32 new_timestamp = SDL_GetPerformanceCounter();
+    SDL_Delay(max(0, floor(16.666 - double(new_timestamp - last_timestamp) * 1000.0 / double(SDL_GetPerformanceFrequency()))));
+    last_timestamp = new_timestamp;
 }
