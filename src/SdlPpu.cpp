@@ -27,5 +27,5 @@ void SdlPpu::render() {
     Ppu::render(static_cast<uint32_t *>(surface->pixels));
     SDL_UnlockSurface(surface);
     SDL_UpdateWindowSurface(window);
-    //SDL_Delay(16);
+    SDL_Delay(16);
 }
