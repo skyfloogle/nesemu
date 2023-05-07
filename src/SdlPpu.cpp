@@ -4,8 +4,10 @@
 
 #include "SdlPpu.h"
 #include "palette.h"
+#include <windows.h>
 
 SdlPpu::SdlPpu(std::shared_ptr<std::array<uint8_t, 0x2000>> chr) : Ppu(std::move(chr)) {
+    SetProcessDPIAware();
     SDL_Init(SDL_INIT_VIDEO);
     window = SDL_CreateWindow(
             "NES",
