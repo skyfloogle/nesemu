@@ -34,6 +34,7 @@ void SdlPpu::render() {
     SDL_UpdateWindowSurface(window);
     // timing
     Uint32 new_timestamp = SDL_GetPerformanceCounter();
-    SDL_Delay(max(0, floor(16.666 - double(new_timestamp - last_timestamp) * 1000.0 / double(SDL_GetPerformanceFrequency()))));
+    double delay = floor(16.666 - double(new_timestamp - last_timestamp) / double(SDL_GetPerformanceFrequency()));
+    SDL_Delay(max(0.0, delay));
     last_timestamp = new_timestamp;
 }
