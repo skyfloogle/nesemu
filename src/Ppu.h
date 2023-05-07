@@ -16,7 +16,7 @@ public:
     void write_reg(uint16_t addr, uint8_t value);
     bool vblank();
     void write_oam(uint8_t value);
-    void render(uint32_t *image);
+    virtual void render() = 0;
 protected:
     std::shared_ptr<std::array<uint8_t, 0x2000>> chr;
     std::array<std::array<uint8_t, 0x400>, 2> nametables;
@@ -24,6 +24,7 @@ protected:
     std::array<uint8_t, 0x100> oam;
     uint8_t scroll_x;
     uint8_t scroll_y;
+    void render(uint32_t *image);
 private:
     uint8_t mem_read(uint16_t addr);
     void mem_write(uint16_t addr, uint8_t value);

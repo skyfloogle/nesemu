@@ -22,19 +22,14 @@ void Cpu::nmi() {
 }
 
 void Cpu::vblank() {
-    if (ppu.vblank() && flag_i) nmi();
-    FILE *f;
-    fopen_s(&f, "screen.data", "wb");
-    uint32_t buffer[256*240];
-    ppu.render(buffer);
-    fwrite(buffer, 4, 256*240, f);
-    fclose(f);
+    if (ppu->vblank() && flag_i) nmi();
+    ppu->render();
 }
 
 void Cpu::perform_rol(uint8_t& value) {
     bool new_c = (value & 0x80) != 0;
     value <<= 1;
-    value |= flag_c;
+    value |= uint8_t(flag_c);
     flag_c = new_c;
     FLAGZN(value);
 }
@@ -888,7 +883,7 @@ uint8_t Cpu::mem_read(uint16_t addr) {
     } else if (addr < 0x2000) {
         return ram[addr & 0x7ff];
     } else if (addr < 0x4000) {
-        return ppu.read_reg(addr);
+        return ppu->read_reg(addr);
     } else if (addr == 0x4016) {
         // JOY1
         input_mask[0] <<= 1;
@@ -909,13 +904,13 @@ void Cpu::mem_write(uint16_t addr, uint8_t value) {
     if (addr < 0x2000) {
         ram[addr & 0x7ff] = value;
     } else if (addr < 0x4000) {
-        ppu.write_reg(addr, value);
+        ppu->write_reg(addr, value);
     } else if (addr < 0x4014 || addr == 0x4015) {
         // audio
         return;
     } else if (addr == 0x4014) {
         for (int i = 0; i < 256; i++) {
-            ppu.write_oam(mem_read((value << 8) | i));
+            ppu->write_oam(mem_read((value << 8) | i));
         }
         just_wrote_oamdma = true;
     } else if (addr == 0x4016) {
@@ -963,7 +958,7 @@ uint8_t Cpu::pull() {
 
 void Cpu::perform_php() {
     push(
-            (flag_c) |
+            (flag_c << 0) |
             (flag_z << 1) |
             (flag_i << 2) |
             (flag_d << 3) |

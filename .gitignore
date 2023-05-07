@@ -1,3 +1,4 @@
 .idea
 cmake-build-debug/
 *.nes
+SDL2-2.26.5/

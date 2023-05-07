@@ -20,7 +20,7 @@
 
 class Cpu {
 public:
-    Cpu(std::shared_ptr<std::array<uint8_t, 0x8000>> prg, std::shared_ptr<std::array<uint8_t, 0x2000>> chr) : prg(std::move(prg)), ppu(std::move(chr)) {}
+    Cpu(std::shared_ptr<std::array<uint8_t, 0x8000>> prg, std::unique_ptr<Ppu> ppu) : prg(std::move(prg)), ppu(std::move(ppu)) {}
     int run_instruction();
     void reset();
     void nmi();
@@ -32,7 +32,7 @@ private:
     bool flag_v, flag_d, flag_i, flag_c, flag_z, flag_n;
     uint16_t reg_pc = 0x8000;
     std::shared_ptr<std::array<uint8_t, 0x8000>> prg;
-    Ppu ppu;
+    std::unique_ptr<Ppu> ppu;
 
     bool reloading_controllers;
     uint8_t inputs[2];

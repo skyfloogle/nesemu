@@ -1,9 +1,10 @@
 #include <iostream>
 #include "Cpu.h"
+#include "SdlPpu.h"
 #include <cstdio>
 #include <utility>
 
-int main() {
+int main(int argc, char* argv[]) {
     auto prg = std::make_shared<std::array<uint8_t, 0x8000>>();
     auto chr = std::make_shared<std::array<uint8_t, 0x2000>>();
     FILE *f;
@@ -18,7 +19,8 @@ int main() {
     for (int i = prg_size; i < 2; i += prg_size) {
         memcpy(&(*prg)[i * 16384], &(*prg)[0], 16384 * prg_size);
     }
-    Cpu cpu(prg, chr);
+    auto ppu = std::make_unique<SdlPpu>(std::move(chr));
+    Cpu cpu(prg, std::move(ppu));
     cpu.reset();
     int cycles = 0;
     while (true) {
