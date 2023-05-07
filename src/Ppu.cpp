@@ -152,7 +152,7 @@ void Ppu::render(uint32_t* image) {
                 *image_cursor++ = 0xff000000 | palette[palettes[0]];
             } else {
                 auto metaattr = nametables[vertical_mirror ? htable : vtable][0x3c0 + (ty >> 2) * 8 + (tx >> 2)];
-                auto attr = (metaattr >> (((ty >> 1) & 2 | (tx >> 1) & 1) << 1)) & 3;
+                auto attr = (metaattr >> ((ty & 2 | (tx >> 1) & 1) << 1)) & 3;
                 *image_cursor++ = 0xff000000 | palette[palettes[attr * 4 + palcol]];
             }
         }
