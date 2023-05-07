@@ -6,7 +6,7 @@
 #include "palette.h"
 #include <windows.h>
 
-SdlPpu::SdlPpu(std::shared_ptr<std::array<uint8_t, 0x2000>> chr) : Ppu(std::move(chr)) {
+SdlPpu::SdlPpu(std::shared_ptr<std::array<uint8_t, 0x2000>> chr, bool vertical) : Ppu(std::move(chr), vertical) {
     SetProcessDPIAware();
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
     window = SDL_CreateWindow(

@@ -10,7 +10,8 @@ uint8_t Ppu::read_reg(uint16_t addr) {
     switch (addr & 7) {
         case 2:
             // PPUSTATUS
-            value = vblank_flag << 7;
+            value &= 0x1f;
+            value |= vblank_flag << 7;
             vblank_flag = false;
             addr_hi = true;
             scroll_latch = true;
@@ -87,7 +88,10 @@ uint8_t Ppu::mem_read(uint16_t addr) {
     if (addr < 0x2000) {
         read_buf = (*chr)[addr];
     } else if (addr < 0x3f00) {
-        read_buf = nametables[0][addr & 0x3ff];
+        int table = (addr >> 10) & 3;
+        if (vertical_mirror) table &= 1;
+        else table >>= 1;
+        read_buf = nametables[table][addr & 0x3ff];
     } else {
         // palettes return early
         return palettes[addr & 0x1f];
@@ -101,7 +105,10 @@ void Ppu::mem_write(uint16_t addr, uint8_t value) {
         // uhh rom?
         abort();
     } else if (addr < 0x3f00) {
-        nametables[0][addr & 0x3ff] = value;
+        int table = (addr >> 10) & 3;
+        if (vertical_mirror) table &= 1;
+        else table >>= 1;
+        nametables[table][addr & 0x3ff] = value;
     } else {
         palettes[addr & 0x1f] = value;
     }
@@ -121,18 +128,30 @@ void Ppu::render(uint32_t* image) {
     uint8_t *tile_patterns = background_pattern_mode ? &(*chr)[0x1000] : &(*chr)[0];
     uint8_t *sprite_patterns = sprite_pattern_mode ? &(*chr)[0x1000] : &(*chr)[0];
     for (int y = 0; y < 240; y++) {
-        int ty = y >> 3;
-        int tv = y & 7;
+        int wy = y + scroll_y;
+        int vtable = nametable_base >> 1;
+        if (wy >= 240) {
+            vtable = !vtable;
+            wy -= 240;
+        }
+        int ty = wy >> 3;
+        int tv = wy & 7;
         for (int x = 0; x < 256; x++) {
-            int tx = x >> 3;
-            int tu = x & 7;
-            auto tile = nametables[0][ty * 32 + tx];
+            int wx = x + scroll_x;
+            int htable = nametable_base & 1;
+            if (wx >= 256) {
+                htable = !htable;
+                wx -= 256;
+            }
+            int tx = wx >> 3;
+            int tu = wx & 7;
+            auto tile = nametables[vertical_mirror ? htable : vtable][ty * 32 + tx];
             auto palcol = (tile_patterns[tile * 16 + tv] >> (7 - tu)) & 1;
             palcol |= ((tile_patterns[tile * 16 + 8 + tv] >> (7 - tu)) & 1) << 1;
             if (palcol == 0) {
                 *image_cursor++ = 0xff000000 | palette[palettes[0]];
             } else {
-                auto metaattr = nametables[0][0x3c0 + (ty >> 2) * 8 + (tx >> 2)];
+                auto metaattr = nametables[vertical_mirror ? htable : vtable][0x3c0 + (ty >> 2) * 8 + (tx >> 2)];
                 auto attr = (metaattr >> (((ty >> 1) & 2 | (tx >> 1) & 1) << 1)) & 3;
                 *image_cursor++ = 0xff000000 | palette[palettes[attr * 4 + palcol]];
             }

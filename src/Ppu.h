@@ -11,7 +11,7 @@
 
 class Ppu {
 public:
-    Ppu(std::shared_ptr<std::array<uint8_t, 0x2000>> chr) : chr(std::move(chr)) {}
+    Ppu(std::shared_ptr<std::array<uint8_t, 0x2000>> chr, bool vertical) : chr(std::move(chr)), vertical_mirror(vertical) {}
     uint8_t read_reg(uint16_t addr);
     void write_reg(uint16_t addr, uint8_t value);
     bool vblank();
@@ -24,6 +24,7 @@ protected:
     std::array<uint8_t, 0x100> oam;
     uint8_t scroll_x;
     uint8_t scroll_y;
+    bool vertical_mirror;
     void render(uint32_t *image);
 private:
     uint8_t mem_read(uint16_t addr);

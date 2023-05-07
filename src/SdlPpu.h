@@ -11,7 +11,7 @@
 
 class SdlPpu : public Ppu {
 public:
-    SdlPpu(std::shared_ptr<std::array<uint8_t, 0x2000>> chr);
+    SdlPpu(std::shared_ptr<std::array<uint8_t, 0x2000>> chr, bool vertical);
     void render() override;
 private:
     SDL_Window* window;
