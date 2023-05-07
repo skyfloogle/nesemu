@@ -107,7 +107,9 @@ void Ppu::write_oam(uint8_t value) {
 }
 
 void Ppu::render(uint32_t* image) {
+    uint32_t* image_cursor = image;
     uint8_t *tile_patterns = background_pattern_mode ? &(*chr)[0x1000] : &(*chr)[0];
+    uint8_t *sprite_patterns = sprite_pattern_mode ? &(*chr)[0x1000] : &(*chr)[0];
     for (int y = 0; y < 240; y++) {
         int ty = y >> 3;
         int tv = y & 7;
@@ -118,11 +120,36 @@ void Ppu::render(uint32_t* image) {
             auto palcol = (tile_patterns[tile * 16 + tv] >> (7 - tu)) & 1;
             palcol |= ((tile_patterns[tile * 16 + 8 + tv] >> (7 - tu)) & 1) << 1;
             if (palcol == 0) {
-                *image++ = 0xff000000 | palette[palettes[0]];
+                *image_cursor++ = 0xff000000 | palette[palettes[0]];
             } else {
                 auto metaattr = nametables[0][0x3c0 + (ty >> 2) * 8 + (tx >> 2)];
                 auto attr = (metaattr >> (((ty >> 1) & 2 | (tx >> 1) & 1) << 1)) & 3;
-                *image++ = 0xff000000 | palette[palettes[attr * 4 + palcol]];
+                *image_cursor++ = 0xff000000 | palette[palettes[attr * 4 + palcol]];
+            }
+        }
+    }
+    // sprites
+    for (int i = 0; i < 0x40; i++) {
+        auto sy = oam[i * 4] + 1;
+        auto tile = oam[i * 4 + 1];
+        auto attrs = oam[i * 4 + 2];
+        auto sx = oam[i * 4 + 3];
+        auto pal = 4 + (attrs & 3);
+        bool vflip = (attrs & 128) != 0;
+        bool hflip = (attrs & 64) != 0;
+        for (int sv_ = 0; sv_ < 8; sv_++) {
+            int sv = vflip ? 7 - sv_ : sv_;
+            int y = sy + sv_;
+            if (y >= 240) break;
+            for (int su_ = 0; su_ < 8; su_++) {
+                int su = hflip ? 7 - su_ : su_;
+                int x = sx + su_;
+                if (x >= 256) break;
+                auto palcol = (sprite_patterns[tile * 16 + sv] >> (7 - su)) & 1;
+                palcol |= ((sprite_patterns[tile * 16 + 8 + sv] >> (7 - su)) & 1) << 1;
+                if (palcol != 0) {
+                    image[y * 256 + x] = 0xff000000 | palette[palettes[pal * 4 + palcol]];
+                }
             }
         }
     }
