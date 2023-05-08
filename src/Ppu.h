@@ -29,15 +29,15 @@ protected:
 private:
     uint8_t mem_read(uint16_t addr);
     void mem_write(uint16_t addr, uint8_t value);
-    uint8_t nametable_base;
-    bool access_increment;
-    bool sprite_pattern_mode;
-    bool background_pattern_mode;
-    bool sprite_size;
-    bool vblank_enabled;
+    uint8_t nametable_base = 0;
+    bool access_increment = false;
+    bool sprite_pattern_mode = false;
+    bool background_pattern_mode = false;
+    bool sprite_size = false;
+    bool vblank_enabled = false;
     bool addr_hi = true;
     bool scroll_latch = true;
-    uint16_t access_addr;
+    uint16_t access_addr = 0;
     bool vblank_flag = false;
     uint8_t oam_addr = 0;
     uint8_t read_buf;

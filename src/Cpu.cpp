@@ -77,7 +77,10 @@ uint8_t Cpu::add(uint8_t left, uint8_t right) {
 }
 
 void Cpu::perform_sbc(uint8_t op) {
+    bool full_circle = op == 0xff && !flag_c;
     reg_a = subtract(reg_a, op + !flag_c);
+    // special case, probably nicer way to do this
+    flag_c = flag_c && !full_circle;
 }
 
 uint8_t Cpu::subtract(uint8_t left, uint8_t right) {
