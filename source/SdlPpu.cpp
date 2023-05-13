@@ -2,27 +2,32 @@
 // Created by Floogle on 07/05/2023.
 //
 
+#ifdef _WIN32
+
 #include "SdlPpu.h"
 #include "palette.h"
 #include <windows.h>
 
-SdlPpu::SdlPpu(std::shared_ptr<std::array<uint8_t, 0x2000>> chr, bool vertical) : Ppu(std::move(chr), vertical) {
+SdlPpu::SdlPpu(std::shared_ptr<std::array<uint8_t, 0x2000>> chr, bool vertical) : Ppu(std::move(chr), vertical)
+{
     SetProcessDPIAware();
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
     window = SDL_CreateWindow(
-            "DK",
-            SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-            768, 720, SDL_WINDOW_SHOWN
-            );
+        "DK",
+        SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+        768, 720, SDL_WINDOW_SHOWN);
     window_surface = SDL_GetWindowSurface(window);
     game_surface = SDL_CreateRGBSurfaceWithFormat(0, 256, 240, 32, window_surface->format->format);
     last_timestamp = SDL_GetPerformanceCounter();
 }
 
-void SdlPpu::render() {
+void SdlPpu::render()
+{
     SDL_Event e;
-    while (SDL_PollEvent(&e)) {
-        if (e.type == SDL_QUIT) {
+    while (SDL_PollEvent(&e))
+    {
+        if (e.type == SDL_QUIT)
+        {
             exit(0);
         }
     }
@@ -38,3 +43,5 @@ void SdlPpu::render() {
     SDL_Delay(max(0.0, delay));
     last_timestamp = new_timestamp;
 }
+
+#endif

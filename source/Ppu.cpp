@@ -4,6 +4,7 @@
 
 #include "Ppu.h"
 #include "palette.h"
+#include <cstdlib>
 
 uint8_t Ppu::read_reg(uint16_t addr) {
     uint8_t value = leftover;

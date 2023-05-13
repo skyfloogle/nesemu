@@ -18,7 +18,8 @@
 #define FLAG_Z 16
 #define FLAG_N 32
 
-class Cpu {
+class Cpu
+{
 public:
     Cpu(std::shared_ptr<std::array<uint8_t, 0x8000>> prg, std::unique_ptr<Ppu> ppu) : prg(std::move(prg)), ppu(std::move(ppu)) {}
     int run_instruction();
@@ -26,6 +27,7 @@ public:
     void nmi();
     void vblank();
     bool just_wrote_oamdma;
+
 private:
     uint8_t ram[0x800];
     uint8_t reg_a, reg_x, reg_y, reg_sp;
@@ -47,9 +49,9 @@ private:
     uint8_t add(uint8_t left, uint8_t right);
     uint8_t subtract(uint8_t left, uint8_t right);
 
-    void perform_rol(uint8_t& value);
+    void perform_rol(uint8_t &value);
 
-    void perform_ror(uint8_t& value);
+    void perform_ror(uint8_t &value);
 
     void perform_asl(uint8_t &value);
 
@@ -65,8 +67,6 @@ private:
     void push(uint8_t value);
 
     void perform_sbc(uint8_t op);
-
 };
 
-
-#endif //NESEMU_CPU_H
+#endif // NESEMU_CPU_H
