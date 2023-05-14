@@ -11,6 +11,8 @@
 #include "CtrPpu.h"
 #endif
 
+#include <3ds.h>
+
 int main(int argc, char *argv[])
 {
     auto prg = std::make_shared<std::array<uint8_t, 0x8000>>();
@@ -23,7 +25,7 @@ int main(int argc, char *argv[])
     {
         memcpy(&(*prg)[i * 16384], &(*prg)[0], 16384 * prg_size);
     }
-    std::unique_ptr<Ppu> ppu(new CtrPpu(std::move(chr), (flags6 & 1) != 0));
+    std::unique_ptr<Ppu> ppu(new CtrPpu(chr, (flags6 & 1) != 0));
     Cpu cpu(prg, std::move(ppu));
     cpu.reset();
     int cycles = 0;

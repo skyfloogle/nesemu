@@ -2,6 +2,7 @@
 #include <3ds.h>
 #include <citro3d.h>
 #include <cstdio>
+#include "vshader_shbin.h"
 
 #include "palette.h"
 
@@ -10,7 +11,20 @@
      GX_TRANSFER_IN_FORMAT(GX_TRANSFER_FMT_RGBA8) | GX_TRANSFER_OUT_FORMAT(GX_TRANSFER_FMT_RGB8) | \
      GX_TRANSFER_SCALING(GX_TRANSFER_SCALE_NO))
 
-CtrPpu::CtrPpu(std::shared_ptr<std::array<uint8_t, 0x2000>> chr, bool vertical) : Ppu(std::move(chr), vertical)
+typedef struct
+{
+    short x, y, z;
+} vertex;
+
+static const vertex vertex_list[] =
+    {
+        {128, 128, 0},
+        {0, 40, 0},
+        {256, 40, 0},
+};
+#define vertex_list_count (sizeof(vertex_list) / sizeof(vertex_list[0]))
+
+CtrPpu::CtrPpu(std::shared_ptr<std::array<uint8_t, 0x2000>> chr, bool vertical) : Ppu(chr, vertical)
 {
     gfxInitDefault();
     C3D_Init(C3D_DEFAULT_CMDBUF_SIZE);
@@ -19,12 +33,132 @@ CtrPpu::CtrPpu(std::shared_ptr<std::array<uint8_t, 0x2000>> chr, bool vertical) 
 
     consoleInit(GFX_BOTTOM, nullptr);
     puts("Hello!");
+
+    // Load the vertex shader, create a shader program and bind it
+    vshader_dvlb = DVLB_ParseFile((u32 *)vshader_shbin, vshader_shbin_size);
+    shaderProgramInit(&program);
+    shaderProgramSetVsh(&program, &vshader_dvlb->DVLE[0]);
+    C3D_BindProgram(&program);
+
+    // Get the location of the uniforms
+    uLoc_projection = shaderInstanceGetUniformLocation(program.vertexShader, "projection");
+
+    // Configure attributes for use with the vertex shader
+    C3D_AttrInfo *attrInfo = C3D_GetAttrInfo();
+    AttrInfo_Init(attrInfo);
+    AttrInfo_AddLoader(attrInfo, 0, GPU_SHORT, 3); // v0=position
+    AttrInfo_AddFixed(attrInfo, 1);                // v1=color
+
+    // Set the fixed attribute (color) to solid white
+    C3D_FixedAttribSet(1, 1.0, 1.0, 1.0, 1.0);
+
+    // Compute the projection matrix
+    Mtx_OrthoTilt(&projection, 0.0, 256.0, 0.0, 240.0, 0.0, 1.0, true);
+
+    // Create the VBO (vertex buffer object)
+    vbo_data = linearAlloc(sizeof(vertex_list));
+    memcpy(vbo_data, vertex_list, sizeof(vertex_list));
+
+    // Configure buffers
+    C3D_BufInfo *bufInfo = C3D_GetBufInfo();
+    BufInfo_Init(bufInfo);
+    BufInfo_Add(bufInfo, vbo_data, sizeof(vertex), 1, 0x0);
+
+    C3D_TexInitParams params;
+    params.width = 128;
+    params.height = 256;
+    params.format = GPU_L8;
+    params.type = GPU_TEX_2D;
+    params.onVram = true;
+    params.maxLevel = 0;
+    C3D_TexInitWithParams(&test_tex, nullptr, params);
+
+    u32 size;
+    u8 *texdata = (u8 *)C3D_Tex2DGetImagePtr(&test_tex, -1, &size);
+    for (u32 i = 0; i < size; i++)
+    {
+        int x = (i & 1) | ((i >> 1) & 2) | ((i >> 2) & 4) | ((i >> 3) & 0xf8);
+        int y = (((i >> 1) & 1) | ((i >> 2) & 2) | ((i >> 3) & 4) | ((i >> 8) & 0xf8));
+        int tv = y % 8;
+        int tu = x % 8;
+        int tile = (y / 8) * 32 + (x / 8);
+        auto palcol = ((*chr)[tile * 16 + tv] >> (7 - tu)) & 1;
+        palcol |= (((*chr)[tile * 16 + 8 + tv] >> (7 - tu)) & 1) << 1;
+        texdata[i] = palcol << 6;
+    }
+
+    C3D_TexSetFilter(&test_tex, GPU_NEAREST, GPU_NEAREST);
+    C3D_TexBind(0, &test_tex);
+
+    // Configure the first fragment shading substage to just pass through the vertex color
+    // See https://www.opengl.org/sdk/docs/man2/xhtml/glTexEnv.xml for more insight
+    C3D_TexEnv *env = C3D_GetTexEnv(0);
+    C3D_TexEnvInit(env);
+    C3D_TexEnvSrc(env, C3D_Both, GPU_TEXTURE0, GPU_TEXTURE0, GPU_TEXTURE0);
+    C3D_TexEnvFunc(env, C3D_Both, GPU_REPLACE);
 }
 
 void CtrPpu::render()
 {
     C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
-    C3D_RenderTargetClear(target, C3D_CLEAR_COLOR, palette[palettes[0]], 0);
+    C3D_RenderTargetClear(target, C3D_CLEAR_ALL, palette[palettes[0]], 0);
     C3D_FrameDrawOn(target);
+    C3D_SetViewport(0, 200 - 128, 240, 256);
+
+    // Update the uniforms
+    C3D_FVUnifMtx4x4(GPU_VERTEX_SHADER, uLoc_projection, &projection);
+
+    C3D_ImmDrawBegin(GPU_TRIANGLES);
+
+    float yoff = background_pattern_mode / 2.0f;
+    if (true)
+        for (int ty = 0; ty < 30; ty++)
+        {
+            for (int tx = 0; tx < 32; tx++)
+            {
+                auto tile = nametables[0][(29 - ty) * 32 + tx];
+                C3D_ImmSendAttrib(tx * 8, ty * 8, 0, 0);
+                C3D_ImmSendAttrib((tile & 0xf) / 16.0f, 1 - (((tile >> 4) + 1) / 32.0f + yoff), 0, 0);
+
+                C3D_ImmSendAttrib(tx * 8 + 8, ty * 8, 0, 0);
+                C3D_ImmSendAttrib(((tile & 0xf) + 1) / 16.0f, 1 - (((tile >> 4) + 1) / 32.0f + yoff), 0, 0);
+
+                C3D_ImmSendAttrib(tx * 8, ty * 8 + 8, 0, 0);
+                C3D_ImmSendAttrib((tile & 0xf) / 16.0f, 1 - (((tile >> 4)) / 32.0f + yoff), 0, 0);
+
+                C3D_ImmSendAttrib(tx * 8, ty * 8 + 8, 0, 0);
+                C3D_ImmSendAttrib((tile & 0xf) / 16.0f, 1 - (((tile >> 4)) / 32.0f + yoff), 0, 0);
+
+                C3D_ImmSendAttrib(tx * 8 + 8, ty * 8, 0, 0);
+                C3D_ImmSendAttrib(((tile & 0xf) + 1) / 16.0f, 1 - (((tile >> 4) + 1) / 32.0f + yoff), 0, 0);
+
+                C3D_ImmSendAttrib(tx * 8 + 8, ty * 8 + 8, 0, 0);
+                C3D_ImmSendAttrib(((tile & 0xf) + 1) / 16.0f, 1 - (((tile >> 4)) / 32.0f + yoff), 0, 0);
+            }
+        }
+    /*
+    C3D_ImmSendAttrib(0, 256, 0, 0);
+    C3D_ImmSendAttrib(0, 1, 0, 0);
+
+    C3D_ImmSendAttrib(0, 0, 0, 0);
+    C3D_ImmSendAttrib(0, 0, 0, 0);
+
+    C3D_ImmSendAttrib(256, 0, 0, 0);
+    C3D_ImmSendAttrib(1, 0, 0, 0);
+
+    C3D_ImmSendAttrib(256, 256, 0, 0);
+    C3D_ImmSendAttrib(1, 1, 0, 0);
+
+    C3D_ImmSendAttrib(0, 256, 0, 0);
+    C3D_ImmSendAttrib(0, 1, 0, 0);
+
+    C3D_ImmSendAttrib(256, 0, 0, 0);
+    C3D_ImmSendAttrib(1, 0, 0, 0);
+    //*/
+    C3D_ImmDrawEnd();
+
+    // Draw the VBO
+    // C3D_DrawArrays(GPU_TRIANGLES, 0, vertex_list_count);
+
     C3D_FrameEnd(0);
 }

@@ -12,6 +12,12 @@ public:
 
 private:
     C3D_RenderTarget *target;
+    DVLB_s *vshader_dvlb;
+    shaderProgram_s program;
+    int uLoc_projection;
+    C3D_Mtx projection;
+    void *vbo_data;
+    C3D_Tex test_tex;
 };
 
 #endif // NESEMU_3DSPPU_H

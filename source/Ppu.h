@@ -9,7 +9,8 @@
 #include <cstdint>
 #include <memory>
 
-class Ppu {
+class Ppu
+{
 public:
     Ppu(std::shared_ptr<std::array<uint8_t, 0x2000>> chr, bool vertical) : chr(std::move(chr)), vertical_mirror(vertical) {}
     uint8_t read_reg(uint16_t addr);
@@ -17,6 +18,7 @@ public:
     bool vblank();
     void write_oam(uint8_t value);
     virtual void render() = 0;
+
 protected:
     std::shared_ptr<std::array<uint8_t, 0x2000>> chr;
     std::array<std::array<uint8_t, 0x400>, 2> nametables;
@@ -24,15 +26,16 @@ protected:
     std::array<uint8_t, 0x100> oam;
     uint8_t scroll_x;
     uint8_t scroll_y;
+    bool sprite_pattern_mode = false;
+    bool background_pattern_mode = false;
     bool vertical_mirror;
     void render(uint32_t *image);
+
 private:
     uint8_t mem_read(uint16_t addr);
     void mem_write(uint16_t addr, uint8_t value);
     uint8_t nametable_base = 0;
     bool access_increment = false;
-    bool sprite_pattern_mode = false;
-    bool background_pattern_mode = false;
     bool sprite_size = false;
     bool vblank_enabled = false;
     bool addr_hi = true;
@@ -44,5 +47,4 @@ private:
     uint8_t leftover;
 };
 
-
-#endif //NESEMU_PPU_H
+#endif // NESEMU_PPU_H

@@ -975,6 +975,7 @@ void Cpu::mem_write(uint16_t addr, uint8_t value)
         reloading_controllers = (value & 1) != 0;
         if (reloading_controllers)
         {
+            inputs[0] = 0;
             // inputs[0] = read_inputs();
         }
     }
