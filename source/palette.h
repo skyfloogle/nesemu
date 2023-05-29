@@ -8,11 +8,20 @@
 #include <cstdint>
 
 // sdl
+// #define COLOR_T uint32_t
 // #define COLOR(r, g, b) ((r << 16) | (g << 8) | b)
 // 3ds
-#define COLOR(r, g, b) ((uint32_t(r) << 24) | (g << 16) | (b << 8) | 0xff)
+struct COLOR_T
+{
+    uint32_t rgb;
+    float r, g, b;
+};
+#define COLOR(r, g, b)                                                                        \
+    {                                                                                         \
+        (uint32_t(r) << 24) | (g << 16) | (b << 8) | 0xff, r / 255.0f, g / 255.0f, b / 255.0f \
+    }
 
-static uint32_t palette[] = {
+static COLOR_T palette[] = {
     COLOR(0x66, 0x66, 0x66),
     COLOR(0x00, 0x2A, 0x88),
     COLOR(0x14, 0x12, 0xA7),

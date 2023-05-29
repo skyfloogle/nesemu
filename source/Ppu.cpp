@@ -187,13 +187,13 @@ void Ppu::render(uint32_t *image)
             palcol |= ((tile_patterns[tile * 16 + 8 + tv] >> (7 - tu)) & 1) << 1;
             if (palcol == 0)
             {
-                *image_cursor++ = 0xff000000 | palette[palettes[0]];
+                *image_cursor++ = 0xff000000 | palette[palettes[0]].rgb;
             }
             else
             {
                 auto metaattr = nametables[vertical_mirror ? htable : vtable][0x3c0 + (ty >> 2) * 8 + (tx >> 2)];
                 auto attr = (metaattr >> (((ty & 2) | ((tx >> 1) & 1)) << 1)) & 3;
-                *image_cursor++ = 0xff000000 | palette[palettes[attr * 4 + palcol]];
+                *image_cursor++ = 0xff000000 | palette[palettes[attr * 4 + palcol]].rgb;
             }
         }
     }
@@ -223,7 +223,7 @@ void Ppu::render(uint32_t *image)
                 palcol |= ((sprite_patterns[tile * 16 + 8 + sv] >> (7 - su)) & 1) << 1;
                 if (palcol != 0)
                 {
-                    image[y * 256 + x] = 0xff000000 | palette[palettes[pal * 4 + palcol]];
+                    image[y * 256 + x] = 0xff000000 | palette[palettes[pal * 4 + palcol]].rgb;
                 }
             }
         }

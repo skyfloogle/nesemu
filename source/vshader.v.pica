@@ -12,14 +12,16 @@
 ; Outputs
 .out outpos position
 .out outtc0 texcoord0
+.out outcol color
 
 ; Inputs (defined as aliases for convenience)
 .alias inpos v0
 .alias intex v1
 
 .proc main
-	; Force the w component of inpos to be 1.0
-	mov r0.xyz, inpos
+	; Force inpos.x to 0 and inpos.w to 1
+	mov r0.xy, inpos
+	mov r0.z,  zeros
 	mov r0.w,   ones
 
 	; outpos = projectionMatrix * inpos
@@ -29,7 +31,10 @@
 	dp4 outpos.w, projection[3], r0
 
 	; outtex = intex
-	mov outtc0, intex
+	mov outtc0.xy, intex.xy
+
+	mov outcol.xy, inpos.zw
+	mov outcol.z, intex.z
 
 	; We're finished
 	end
