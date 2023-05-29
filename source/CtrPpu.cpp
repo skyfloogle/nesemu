@@ -77,11 +77,11 @@ CtrPpu::CtrPpu(std::shared_ptr<std::array<uint8_t, 0x2000>> chr, bool vertical) 
     u8 *texdata = (u8 *)C3D_Tex2DGetImagePtr(&test_tex, -1, &size);
     for (u32 i = 0; i < size; i++)
     {
-        int x = (i & 1) | ((i >> 1) & 2) | ((i >> 2) & 4) | ((i >> 3) & 0xf8);
-        int y = (((i >> 1) & 1) | ((i >> 2) & 2) | ((i >> 3) & 4) | ((i >> 8) & 0xf8));
+        int x = (i & 1) | ((i >> 1) & 2) | ((i >> 2) & 4) | ((i >> 3) & 0x78);
+        int y = (((i >> 1) & 1) | ((i >> 2) & 2) | ((i >> 3) & 4) | ((i >> 7) & 0xf8));
         int tv = y % 8;
         int tu = x % 8;
-        int tile = (y / 8) * 32 + (x / 8);
+        int tile = (y / 8) * 16 + (x / 8);
         auto palcol = ((*chr)[tile * 16 + tv] >> (7 - tu)) & 1;
         palcol |= (((*chr)[tile * 16 + 8 + tv] >> (7 - tu)) & 1) << 1;
         texdata[i] = palcol << 6;
