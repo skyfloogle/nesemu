@@ -11,19 +11,6 @@
      GX_TRANSFER_IN_FORMAT(GX_TRANSFER_FMT_RGBA8) | GX_TRANSFER_OUT_FORMAT(GX_TRANSFER_FMT_RGB8) | \
      GX_TRANSFER_SCALING(GX_TRANSFER_SCALE_NO))
 
-typedef struct
-{
-    short x, y, z;
-} vertex;
-
-static const vertex vertex_list[] =
-    {
-        {128, 128, 0},
-        {0, 40, 0},
-        {256, 40, 0},
-};
-#define vertex_list_count (sizeof(vertex_list) / sizeof(vertex_list[0]))
-
 CtrPpu::CtrPpu(std::shared_ptr<std::array<uint8_t, 0x2000>> chr, bool vertical) : Ppu(chr, vertical)
 {
     gfxInitDefault();
@@ -46,23 +33,11 @@ CtrPpu::CtrPpu(std::shared_ptr<std::array<uint8_t, 0x2000>> chr, bool vertical) 
     // Configure attributes for use with the vertex shader
     C3D_AttrInfo *attrInfo = C3D_GetAttrInfo();
     AttrInfo_Init(attrInfo);
-    AttrInfo_AddLoader(attrInfo, 0, GPU_SHORT, 3); // v0=x,y,r,g
-    AttrInfo_AddFixed(attrInfo, 1);                // v1=u,v,b
-
-    // Set the fixed attribute (color) to solid white
-    // C3D_FixedAttribSet(1, 1.0, 1.0, 1.0, 1.0);
+    AttrInfo_AddFixed(attrInfo, 0);
+    AttrInfo_AddFixed(attrInfo, 1);
 
     // Compute the projection matrix
     Mtx_OrthoTilt(&projection, 0.0, 256.0, 0.0, 240.0, 0.0, 1.0, true);
-
-    // Create the VBO (vertex buffer object)
-    vbo_data = linearAlloc(sizeof(vertex_list));
-    memcpy(vbo_data, vertex_list, sizeof(vertex_list));
-
-    // Configure buffers
-    C3D_BufInfo *bufInfo = C3D_GetBufInfo();
-    BufInfo_Init(bufInfo);
-    BufInfo_Add(bufInfo, vbo_data, sizeof(vertex), 1, 0x0);
 
     C3D_TexInitParams params;
     params.width = 512;
@@ -147,29 +122,7 @@ void CtrPpu::render()
                 }
             }
         }
-    /*
-    C3D_ImmSendAttrib(0, 256, 0, 0);
-    C3D_ImmSendAttrib(0, 1, 0, 0);
-
-    C3D_ImmSendAttrib(0, 0, 0, 0);
-    C3D_ImmSendAttrib(0, 0, 0, 0);
-
-    C3D_ImmSendAttrib(256, 0, 0, 0);
-    C3D_ImmSendAttrib(1, 0, 0, 0);
-
-    C3D_ImmSendAttrib(256, 256, 0, 0);
-    C3D_ImmSendAttrib(1, 1, 0, 0);
-
-    C3D_ImmSendAttrib(0, 256, 0, 0);
-    C3D_ImmSendAttrib(0, 1, 0, 0);
-
-    C3D_ImmSendAttrib(256, 0, 0, 0);
-    C3D_ImmSendAttrib(1, 0, 0, 0);
-    //*/
     C3D_ImmDrawEnd();
-
-    // Draw the VBO
-    // C3D_DrawArrays(GPU_TRIANGLES, 0, vertex_list_count);
 
     C3D_FrameEnd(0);
 }

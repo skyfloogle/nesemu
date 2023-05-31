@@ -16,7 +16,6 @@ private:
     shaderProgram_s program;
     int uLoc_projection;
     C3D_Mtx projection;
-    void *vbo_data;
     C3D_Tex test_tex;
 };
 
