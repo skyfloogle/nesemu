@@ -14,7 +14,7 @@
 CtrPpu::CtrPpu(std::shared_ptr<std::array<uint8_t, 0x2000>> chr, bool vertical) : Ppu(chr, vertical)
 {
     gfxInitDefault();
-    C3D_Init(C3D_DEFAULT_CMDBUF_SIZE * 6);
+    C3D_Init(C3D_DEFAULT_CMDBUF_SIZE);
     target = C3D_RenderTargetCreate(240, 400, GPU_RB_RGBA8, GPU_RB_DEPTH16);
     C3D_RenderTargetSetOutput(target, GFX_TOP, GFX_LEFT, DISPLAY_TRANSFER_FLAGS);
 
