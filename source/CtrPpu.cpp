@@ -25,7 +25,7 @@ CtrPpu::CtrPpu(std::shared_ptr<std::array<uint8_t, 0x2000>> chr, bool vertical) 
     program_dvlb = DVLB_ParseFile((u32 *)program_shbin, program_shbin_size);
     shaderProgramInit(&program);
     shaderProgramSetVsh(&program, &program_dvlb->DVLE[0]);
-    shaderProgramSetGsh(&program, &program_dvlb->DVLE[1], 9);
+    shaderProgramSetGsh(&program, &program_dvlb->DVLE[1], 3);
     C3D_BindProgram(&program);
 
     // Get the location of the uniforms
@@ -104,32 +104,9 @@ void CtrPpu::render()
                 for (int i = 1; i < 4; i++)
                 {
                     float xo = i / 4.0f;
-                    float u = 0, v = 15.0 / 32.0, uw = 1.0 / 64.0, vw = 1.0 / 32.0;
-                    u = (tile & 0xf) / 64.0f + xo;
-                    v = -((tile >> 4) + 1) / 32.0 + yoff;
                     C3D_ImmSendAttrib(tx * 8, ty * 8, 0, 0);
                     C3D_ImmSendAttrib(palette[palettes[attr * 4 + i]].r, palette[palettes[attr * 4 + i]].g, palette[palettes[attr * 4 + i]].b, 1);
-                    C3D_ImmSendAttrib(u, v, 0, 0);
-
-                    C3D_ImmSendAttrib(tx * 8 + 8, ty * 8, 0, 0);
-                    C3D_ImmSendAttrib(palette[palettes[attr * 4 + i]].r, palette[palettes[attr * 4 + i]].g, palette[palettes[attr * 4 + i]].b, 1);
-                    C3D_ImmSendAttrib(u + uw, v, 0, 0);
-
-                    C3D_ImmSendAttrib(tx * 8, ty * 8 + 8, 0, 0);
-                    C3D_ImmSendAttrib(palette[palettes[attr * 4 + i]].r, palette[palettes[attr * 4 + i]].g, palette[palettes[attr * 4 + i]].b, 1);
-                    C3D_ImmSendAttrib(u, v + vw, 0, 0);
-
-                    C3D_ImmSendAttrib(tx * 8, ty * 8 + 8, 0, 0);
-                    C3D_ImmSendAttrib(palette[palettes[attr * 4 + i]].r, palette[palettes[attr * 4 + i]].g, palette[palettes[attr * 4 + i]].b, 1);
-                    C3D_ImmSendAttrib(u, v + vw, 0, 0);
-
-                    C3D_ImmSendAttrib(tx * 8 + 8, ty * 8, 0, 0);
-                    C3D_ImmSendAttrib(palette[palettes[attr * 4 + i]].r, palette[palettes[attr * 4 + i]].g, palette[palettes[attr * 4 + i]].b, 1);
-                    C3D_ImmSendAttrib(u + uw, v, 0, 0);
-
-                    C3D_ImmSendAttrib(tx * 8 + 8, ty * 8 + 8, 0, 0);
-                    C3D_ImmSendAttrib(palette[palettes[attr * 4 + i]].r, palette[palettes[attr * 4 + i]].g, palette[palettes[attr * 4 + i]].b, 1);
-                    C3D_ImmSendAttrib(u + uw, v + vw, 0, 0);
+                    C3D_ImmSendAttrib((tile & 0xf) / 64.0f + xo, -((tile >> 4) + 1) / 32.0 + yoff, 0, 0);
                 }
             }
         }
