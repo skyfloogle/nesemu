@@ -2,7 +2,7 @@
 #include <3ds.h>
 #include <citro3d.h>
 #include <cstdio>
-#include "vshader_shbin.h"
+#include "program_shbin.h"
 
 #include "palette.h"
 
@@ -22,9 +22,9 @@ CtrPpu::CtrPpu(std::shared_ptr<std::array<uint8_t, 0x2000>> chr, bool vertical) 
     puts("Hello!");
 
     // Load the vertex shader, create a shader program and bind it
-    vshader_dvlb = DVLB_ParseFile((u32 *)vshader_shbin, vshader_shbin_size);
+    program_dvlb = DVLB_ParseFile((u32 *)program_shbin, program_shbin_size);
     shaderProgramInit(&program);
-    shaderProgramSetVsh(&program, &vshader_dvlb->DVLE[0]);
+    shaderProgramSetVsh(&program, &program_dvlb->DVLE[0]);
     C3D_BindProgram(&program);
 
     // Get the location of the uniforms
