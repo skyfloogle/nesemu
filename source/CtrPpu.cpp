@@ -14,7 +14,7 @@
 CtrPpu::CtrPpu(std::shared_ptr<std::array<uint8_t, 0x2000>> chr, bool vertical) : Ppu(chr, vertical)
 {
     gfxInitDefault();
-    C3D_Init(C3D_DEFAULT_CMDBUF_SIZE * 3);
+    C3D_Init(C3D_DEFAULT_CMDBUF_SIZE * 6);
     target = C3D_RenderTargetCreate(240, 400, GPU_RB_RGBA8, GPU_RB_DEPTH16);
     C3D_RenderTargetSetOutput(target, GFX_TOP, GFX_LEFT, DISPLAY_TRANSFER_FLAGS);
 
@@ -25,16 +25,18 @@ CtrPpu::CtrPpu(std::shared_ptr<std::array<uint8_t, 0x2000>> chr, bool vertical) 
     program_dvlb = DVLB_ParseFile((u32 *)program_shbin, program_shbin_size);
     shaderProgramInit(&program);
     shaderProgramSetVsh(&program, &program_dvlb->DVLE[0]);
+    shaderProgramSetGsh(&program, &program_dvlb->DVLE[1], 9);
     C3D_BindProgram(&program);
 
     // Get the location of the uniforms
-    uLoc_projection = shaderInstanceGetUniformLocation(program.vertexShader, "projection");
+    uLoc_projection = shaderInstanceGetUniformLocation(program.geometryShader, "projection");
 
     // Configure attributes for use with the vertex shader
     C3D_AttrInfo *attrInfo = C3D_GetAttrInfo();
     AttrInfo_Init(attrInfo);
     AttrInfo_AddFixed(attrInfo, 0);
     AttrInfo_AddFixed(attrInfo, 1);
+    AttrInfo_AddFixed(attrInfo, 2);
 
     // Compute the projection matrix
     Mtx_OrthoTilt(&projection, 0.0, 256.0, 0.0, 240.0, 0.0, 1.0, true);
@@ -86,9 +88,9 @@ void CtrPpu::render()
     C3D_SetViewport(0, 200 - 128, 240, 256);
 
     // Update the uniforms
-    C3D_FVUnifMtx4x4(GPU_VERTEX_SHADER, uLoc_projection, &projection);
+    C3D_FVUnifMtx4x4(GPU_GEOMETRY_SHADER, uLoc_projection, &projection);
 
-    C3D_ImmDrawBegin(GPU_TRIANGLES);
+    C3D_ImmDrawBegin(GPU_GEOMETRY_PRIM);
 
     float yoff = background_pattern_mode / 2.0f;
     if (true)
@@ -102,23 +104,32 @@ void CtrPpu::render()
                 for (int i = 1; i < 4; i++)
                 {
                     float xo = i / 4.0f;
-                    C3D_ImmSendAttrib(tx * 8, ty * 8, palette[palettes[attr * 4 + i]].r, palette[palettes[attr * 4 + i]].g);
-                    C3D_ImmSendAttrib((tile & 0xf) / 64.0f + xo, 1 - (((tile >> 4) + 1) / 32.0f + yoff), palette[palettes[attr * 4 + i]].b, 0);
+                    float u = 0, v = 15.0 / 32.0, uw = 1.0 / 64.0, vw = 1.0 / 32.0;
+                    u = (tile & 0xf) / 64.0f + xo;
+                    v = -((tile >> 4) + 1) / 32.0 + yoff;
+                    C3D_ImmSendAttrib(tx * 8, ty * 8, 0, 0);
+                    C3D_ImmSendAttrib(palette[palettes[attr * 4 + i]].r, palette[palettes[attr * 4 + i]].g, palette[palettes[attr * 4 + i]].b, 1);
+                    C3D_ImmSendAttrib(u, v, 0, 0);
 
-                    C3D_ImmSendAttrib(tx * 8 + 8, ty * 8, palette[palettes[attr * 4 + i]].r, palette[palettes[attr * 4 + i]].g);
-                    C3D_ImmSendAttrib(((tile & 0xf) + 1) / 64.0f + xo, 1 - (((tile >> 4) + 1) / 32.0f + yoff), palette[palettes[attr * 4 + i]].b, 0);
+                    C3D_ImmSendAttrib(tx * 8 + 8, ty * 8, 0, 0);
+                    C3D_ImmSendAttrib(palette[palettes[attr * 4 + i]].r, palette[palettes[attr * 4 + i]].g, palette[palettes[attr * 4 + i]].b, 1);
+                    C3D_ImmSendAttrib(u + uw, v, 0, 0);
 
-                    C3D_ImmSendAttrib(tx * 8, ty * 8 + 8, palette[palettes[attr * 4 + i]].r, palette[palettes[attr * 4 + i]].g);
-                    C3D_ImmSendAttrib((tile & 0xf) / 64.0f + xo, 1 - (((tile >> 4)) / 32.0f + yoff), palette[palettes[attr * 4 + i]].b, 0);
+                    C3D_ImmSendAttrib(tx * 8, ty * 8 + 8, 0, 0);
+                    C3D_ImmSendAttrib(palette[palettes[attr * 4 + i]].r, palette[palettes[attr * 4 + i]].g, palette[palettes[attr * 4 + i]].b, 1);
+                    C3D_ImmSendAttrib(u, v + vw, 0, 0);
 
-                    C3D_ImmSendAttrib(tx * 8, ty * 8 + 8, palette[palettes[attr * 4 + i]].r, palette[palettes[attr * 4 + i]].g);
-                    C3D_ImmSendAttrib((tile & 0xf) / 64.0f + xo, 1 - (((tile >> 4)) / 32.0f + yoff), palette[palettes[attr * 4 + i]].b, 0);
+                    C3D_ImmSendAttrib(tx * 8, ty * 8 + 8, 0, 0);
+                    C3D_ImmSendAttrib(palette[palettes[attr * 4 + i]].r, palette[palettes[attr * 4 + i]].g, palette[palettes[attr * 4 + i]].b, 1);
+                    C3D_ImmSendAttrib(u, v + vw, 0, 0);
 
-                    C3D_ImmSendAttrib(tx * 8 + 8, ty * 8, palette[palettes[attr * 4 + i]].r, palette[palettes[attr * 4 + i]].g);
-                    C3D_ImmSendAttrib(((tile & 0xf) + 1) / 64.0f + xo, 1 - (((tile >> 4) + 1) / 32.0f + yoff), palette[palettes[attr * 4 + i]].b, 0);
+                    C3D_ImmSendAttrib(tx * 8 + 8, ty * 8, 0, 0);
+                    C3D_ImmSendAttrib(palette[palettes[attr * 4 + i]].r, palette[palettes[attr * 4 + i]].g, palette[palettes[attr * 4 + i]].b, 1);
+                    C3D_ImmSendAttrib(u + uw, v, 0, 0);
 
-                    C3D_ImmSendAttrib(tx * 8 + 8, ty * 8 + 8, palette[palettes[attr * 4 + i]].r, palette[palettes[attr * 4 + i]].g);
-                    C3D_ImmSendAttrib(((tile & 0xf) + 1) / 64.0f + xo, 1 - (((tile >> 4)) / 32.0f + yoff), palette[palettes[attr * 4 + i]].b, 0);
+                    C3D_ImmSendAttrib(tx * 8 + 8, ty * 8 + 8, 0, 0);
+                    C3D_ImmSendAttrib(palette[palettes[attr * 4 + i]].r, palette[palettes[attr * 4 + i]].g, palette[palettes[attr * 4 + i]].b, 1);
+                    C3D_ImmSendAttrib(u + uw, v + vw, 0, 0);
                 }
             }
         }
