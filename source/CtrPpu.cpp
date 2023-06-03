@@ -46,12 +46,12 @@ CtrPpu::CtrPpu(std::shared_ptr<std::array<uint8_t, 0x2000>> chr, bool vertical) 
     params.height = 256;
     params.format = GPU_A8;
     params.type = GPU_TEX_2D;
-    params.onVram = false;
+    params.onVram = true;
     params.maxLevel = 0;
     C3D_TexInitWithParams(&test_tex, nullptr, params);
 
-    u32 size;
-    u8 *texdata = (u8 *)C3D_Tex2DGetImagePtr(&test_tex, -1, &size);
+    u32 size = 512 * 256;
+    u8 *texdata = (u8 *)linearAlloc(size);
     for (u32 i = 0; i < size; i++)
     {
         int x = (i & 1) | ((i >> 1) & 2) | ((i >> 2) & 4) | ((i >> 3) & 0x1f8);
@@ -65,6 +65,9 @@ CtrPpu::CtrPpu(std::shared_ptr<std::array<uint8_t, 0x2000>> chr, bool vertical) 
         palcol |= (((*chr)[tile * 16 + 8 + tv] >> (7 - tu)) & 1) << 1;
         texdata[i] = (palcol == col) ? 0xff : 0;
     }
+    GSPGPU_FlushDataCache(texdata, size);
+    C3D_TexLoadImage(&test_tex, texdata, GPU_TEXFACE_2D, -1);
+    linearFree(texdata);
 
     C3D_TexSetFilter(&test_tex, GPU_NEAREST, GPU_NEAREST);
     C3D_TexBind(0, &test_tex);
