@@ -34,9 +34,9 @@ CtrPpu::CtrPpu(std::shared_ptr<std::array<uint8_t, 0x2000>> chr, bool vertical) 
     // Configure attributes for use with the vertex shader
     C3D_AttrInfo *attrInfo = C3D_GetAttrInfo();
     AttrInfo_Init(attrInfo);
-    AttrInfo_AddFixed(attrInfo, 0);
-    AttrInfo_AddFixed(attrInfo, 1);
-    AttrInfo_AddFixed(attrInfo, 2);
+    AttrInfo_AddLoader(attrInfo, 0, GPU_FLOAT, 2);
+    AttrInfo_AddLoader(attrInfo, 1, GPU_FLOAT, 3);
+    AttrInfo_AddLoader(attrInfo, 2, GPU_FLOAT, 2);
 
     // Compute the projection matrix
     Mtx_OrthoTilt(&projection, 0.0, 256.0, 0.0, 240.0, 0.0, 1.0, true);
@@ -69,11 +69,26 @@ CtrPpu::CtrPpu(std::shared_ptr<std::array<uint8_t, 0x2000>> chr, bool vertical) 
     C3D_TexLoadImage(&test_tex, texdata, GPU_TEXFACE_2D, -1);
     linearFree(texdata);
 
+    vbuf = (vertex *)linearAlloc(sizeof(vertex) * 32 * 30 * 3);
+    vertex *vptr = vbuf;
+    for (int y = 0; y < 30; y++)
+        for (int x = 0; x < 32; x++)
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                vptr->x = x * 8;
+                vptr->y = y * 8;
+                vptr++;
+            }
+        }
+
+    C3D_BufInfo *bufInfo = C3D_GetBufInfo();
+    BufInfo_Init(bufInfo);
+    BufInfo_Add(bufInfo, vbuf, sizeof(vertex), 3, 0x210);
+
     C3D_TexSetFilter(&test_tex, GPU_NEAREST, GPU_NEAREST);
     C3D_TexBind(0, &test_tex);
 
-    // Configure the first fragment shading substage to just pass through the vertex color
-    // See https://www.opengl.org/sdk/docs/man2/xhtml/glTexEnv.xml for more insight
     C3D_TexEnv *env = C3D_GetTexEnv(0);
     C3D_TexEnvInit(env);
     C3D_TexEnvSrc(env, C3D_RGB, GPU_PRIMARY_COLOR);
@@ -93,27 +108,31 @@ void CtrPpu::render()
     // Update the uniforms
     C3D_FVUnifMtx4x4(GPU_GEOMETRY_SHADER, uLoc_projection, &projection);
 
-    C3D_ImmDrawBegin(GPU_GEOMETRY_PRIM);
-
     float yoff = background_pattern_mode / 2.0f;
-    if (true)
-        for (int ty = 0; ty < 30; ty++)
+
+    vertex *vptr = vbuf;
+    for (int ty = 0; ty < 30; ty++)
+    {
+        for (int tx = 0; tx < 32; tx++)
         {
-            for (int tx = 0; tx < 32; tx++)
+            auto tile = nametables[0][(29 - ty) * 32 + tx];
+            auto metaattr = nametables[0][0x3c0 + ((29 - ty) >> 2) * 8 + (tx >> 2)];
+            auto attr = (metaattr >> ((((29 - ty) & 2) | ((tx >> 1) & 1)) << 1)) & 3;
+            float u = (tile & 0xf) / 64.0f;
+            float v = -((tile >> 4) + 1) / 32.0f + yoff;
+            for (int i = 1; i < 4; i++)
             {
-                auto tile = nametables[0][(29 - ty) * 32 + tx];
-                auto metaattr = nametables[0][0x3c0 + ((29 - ty) >> 2) * 8 + (tx >> 2)];
-                auto attr = (metaattr >> ((((29 - ty) & 2) | ((tx >> 1) & 1)) << 1)) & 3;
-                for (int i = 1; i < 4; i++)
-                {
-                    float xo = i / 4.0f;
-                    C3D_ImmSendAttrib(tx * 8, ty * 8, 0, 0);
-                    C3D_ImmSendAttrib(palette[palettes[attr * 4 + i]].r, palette[palettes[attr * 4 + i]].g, palette[palettes[attr * 4 + i]].b, 1);
-                    C3D_ImmSendAttrib((tile & 0xf) / 64.0f + xo, -((tile >> 4) + 1) / 32.0 + yoff, 0, 0);
-                }
+                u += 0.25;
+                vptr->u = u;
+                vptr->v = v;
+                vptr->r = palette[palettes[attr * 4 + i]].r;
+                vptr->g = palette[palettes[attr * 4 + i]].g;
+                vptr->b = palette[palettes[attr * 4 + i]].b;
+                vptr++;
             }
         }
-    C3D_ImmDrawEnd();
+    }
+    C3D_DrawArrays(GPU_GEOMETRY_PRIM, 0, 32 * 30 * 3);
 
     C3D_FrameEnd(0);
 }

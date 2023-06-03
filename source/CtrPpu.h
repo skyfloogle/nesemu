@@ -4,6 +4,13 @@
 #include <citro3d.h>
 #include "Ppu.h"
 
+struct vertex
+{
+    float x, y;
+    float r, g, b;
+    float u, v;
+};
+
 class CtrPpu : public Ppu
 {
 public:
@@ -17,6 +24,7 @@ private:
     int uLoc_projection;
     C3D_Mtx projection;
     C3D_Tex test_tex;
+    vertex *vbuf;
 };
 
 #endif // NESEMU_3DSPPU_H
