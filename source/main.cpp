@@ -42,6 +42,12 @@ int main(int argc, char *argv[])
             cycles -= 29780;
             cpu.vblank();
         }
+        hidScanInput();
+
+        // Respond to user input
+        u32 kDown = hidKeysDown();
+        if (kDown & KEY_START)
+            break; // break in order to return to hbmenu
     }
     return 0;
 }

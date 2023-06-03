@@ -46,7 +46,7 @@ CtrPpu::CtrPpu(std::shared_ptr<std::array<uint8_t, 0x2000>> chr, bool vertical) 
     params.height = 256;
     params.format = GPU_A8;
     params.type = GPU_TEX_2D;
-    params.onVram = true;
+    params.onVram = false;
     params.maxLevel = 0;
     C3D_TexInitWithParams(&test_tex, nullptr, params);
 

@@ -15,24 +15,23 @@
 .out outtc0 texcoord0
 
 ; Inputs: we will receive the following inputs:
-; v0-v1: position/color of the first vertex
-; v2-v3: position/color of the second vertex
-; v4-v5: position/color of the third vertex
-; v6-v7: position/color of the fourth vertex
+; v0: top-left position of tile
+; v1: tile colour
+; v2: top-left uv of tile
 
 .entry gmain
 .proc gmain
-	mov outclr, v1
-	
 	setemit 0
 	mov r8, v0
 	call process_vertex
+	mov outclr, v1
 	mov outtc0, v2
 	emit
 
 	setemit 1
 	add r8.x, eight.x, r8.x
 	call process_vertex
+	mov outclr, v1
 	mov outtc0, v2
 	add outtc0.x, textil.x, v2.x
 	emit
@@ -41,6 +40,7 @@
 	mov r8, v0
 	add r8.y, eight.y, r8.y
 	call process_vertex
+	mov outclr, v1
 	mov outtc0, v2
 	add outtc0.y, textil.y, v2.y
 	emit
@@ -48,6 +48,7 @@
 	setemit 0, inv prim
 	add r8.x, eight.x, r8.x
 	call process_vertex
+	mov outclr, v1
 	mov outtc0, v2
 	add outtc0.xy, textil.xy, v2.xy
 	emit
